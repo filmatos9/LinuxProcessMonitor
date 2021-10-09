@@ -7,11 +7,41 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+
+// remove leading trailing whitespace
+void removeLeadTrailWS(std::string& str) {
+  // erase leading whitespace characters
+  str.erase(str.begin(), std::find_if(str.begin(), str.end(), [] (char c) {return !isspace(c);}));
+  // erase trailing whitespace characters
+  str.erase(std::find_if(str.rbegin(), str.rend(), [] (char c) {return !isspace(c);}).base(), str.rbegin().base());
+}
+
+// this function will place the cursor immediately after the keys delimeter if found
+bool seekKey(std::ifstream& ifs, const std::string& key, char delim) {
+  std::string line;
+  // skip the initial whitespace, if there is any
+  while(getline(ifs, line, delim))
+  {
+    // remove everything before the LAST new line
+    auto sIter = std::find(line.rbegin(), line.rend(), '\n');
+    if (sIter != line.rend()){
+      line.erase(line.begin(), sIter.base());
+    }
+
+    removeLeadTrailWS(line);
+    if (line == key) {
+      return true;
+    }
+  }
+  ifs.clear();
+  return false;
+}
 
 string LinuxParser::OperatingSystem() {
   string line;
@@ -50,11 +80,8 @@ string LinuxParser::Kernel() {
 vector<int> LinuxParser::Pids() {
   namespace fs = std::filesystem;
   vector<int> pids;
-  for (const auto& entry :
-       std::filesystem::directory_iterator(kProcDirectory)) {
-    // Is this a directory?
+  for (const auto& entry : fs::directory_iterator(kProcDirectory)) {
     if (entry.is_directory()) {
-      // Is every character of the name a digit?
       string filename(entry.path().filename());
       if (std::all_of(filename.begin(), filename.end(), isdigit)) {
         int pid = stoi(filename);
@@ -66,7 +93,24 @@ vector<int> LinuxParser::Pids() {
 }
 
 // TODO: Read and return the system memory utilization
-float LinuxParser::MemoryUtilization() { return 0.0; }
+float LinuxParser::MemoryUtilization() 
+{ 
+  std::ifstream memFile(kProcDirectory + kMeminfoFilename);
+  // check if the file is open
+  if (memFile.is_open()) {
+    int memTotal{0};
+    int memFree{0};
+    // Get MemTotal
+    if (seekKey(memFile, "MemTotal", ':')) {
+      memFile >> memTotal;
+    }
+    if (seekKey(memFile, "MemAvailable", ':')) {
+      memFile >> memFree;
+    }
+    return (memTotal-memFree)/static_cast<float>(memTotal);
+  }
+  return 0.0f;
+}
 
 // TODO: Read and return the system uptime
 long LinuxParser::UpTime() { return 0; }
