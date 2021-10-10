@@ -14,31 +14,54 @@ using std::string;
 using std::to_string;
 using std::vector;
 
-// remove leading trailing whitespace
-void removeLeadTrailWS(std::string& str) {
-  // erase leading whitespace characters
-  str.erase(str.begin(), std::find_if(str.begin(), str.end(), [] (char c) {return !isspace(c);}));
-  // erase trailing whitespace characters
-  str.erase(std::find_if(str.rbegin(), str.rend(), [] (char c) {return !isspace(c);}).base(), str.rbegin().base());
+// PRIVATE FUNCTIONS FOR THIS TRANSLATION UNIT
+
+// remove leading whitespace
+int removeLeadWS(std::string& str) {
+  auto iter = std::find_if(str.begin(), str.end(), [] (char c) { return !isspace(c); });
+  int charsRemoved = std::distance(str.begin(), iter);
+  str.erase(str.begin(), iter);
+  return charsRemoved;
 }
 
-// this function will place the cursor immediately after the keys delimeter if found
-bool seekKey(std::ifstream& ifs, const std::string& key, char delim) {
-  std::string line;
-  // skip the initial whitespace, if there is any
-  while(getline(ifs, line, delim))
-  {
-    // remove everything before the LAST new line
-    auto sIter = std::find(line.rbegin(), line.rend(), '\n');
-    if (sIter != line.rend()){
-      line.erase(line.begin(), sIter.base());
-    }
+// remove trailing whitespace
+int removeTrailWS(std::string& str) 
+{
+  auto iter = std::find_if(str.rbegin(), str.rend(), [] (char c) { return !isspace(c); });
+  int charsRemoved = std::distance(str.rbegin(), iter);
+  str.erase(iter.base(), str.end());
+  return charsRemoved;
+}
 
-    removeLeadTrailWS(line);
-    if (line == key) {
-      return true;
+// this function will place the cursor immediately after the specified key's delimeter
+// for easy reading of the key value using the insertion operator
+// if the key is found, return true, else return false
+bool seekKey(std::ifstream& ifs, const std::string& key, char delim) {
+  std::string line, keyline;
+  // get current cursor position
+  auto cursorPos = ifs.tellg();
+  while(getline(ifs, line))
+  {
+    // remove leading whitespace from line update cursor pos
+    cursorPos += std::streamoff(removeLeadWS(line));
+    // parse line for specified delimeter
+    std::istringstream linestream(line);
+    auto keyLineStartPos = linestream.tellg();
+    getline(linestream, keyline, delim);
+    auto keyLineEndPos = linestream.tellg();
+    cursorPos += (keyLineEndPos - keyLineStartPos);
+    // check if the delimeter was found
+    if (linestream.good()) {
+      removeTrailWS(keyline);
+      if (keyline == key) {
+        ifs.seekg(cursorPos);
+        return true;
+      }
     }
+    // update the cursor position
+    cursorPos = ifs.tellg();
   }
+  // clear any errors which were generated
   ifs.clear();
   return false;
 }
@@ -94,6 +117,9 @@ vector<int> LinuxParser::Pids() {
 
 float LinuxParser::MemoryUtilization() 
 { 
+  const std::string MEM_TOTAL_KEY{"MemTotal"};
+  const std::string MEM_AVAIL_KEY{"MemAvailable"};
+  constexpr char delim = ':';
   std::ifstream memFile(kProcDirectory + kMeminfoFilename);
   float result{0.0f};
   // check if the file is open
@@ -101,10 +127,10 @@ float LinuxParser::MemoryUtilization()
     int memTotal{0};
     int memFree{0};
     // Get MemTotal
-    if (seekKey(memFile, "MemTotal", ':')) {
+    if (seekKey(memFile, MEM_TOTAL_KEY, delim)) {
       memFile >> memTotal;
     }
-    if (seekKey(memFile, "MemAvailable", ':')) {
+    if (seekKey(memFile, MEM_AVAIL_KEY, delim)) {
       memFile >> memFree;
     }
     memFile.close();
@@ -151,12 +177,34 @@ vector<string> LinuxParser::CpuUtilization()
 
 int LinuxParser::TotalProcesses() 
 { 
-  return 0; 
+  const std::string TOTAL_PROC_KEY{"processes"};
+  constexpr char delim = ' ';
+  std::ifstream statFile(kProcDirectory + kStatFilename);
+  int value{0};
+  if (statFile.is_open())
+  {
+    if (seekKey(statFile, TOTAL_PROC_KEY, delim)) {
+      statFile >> value;
+    }
+    statFile.close();
+  }
+  return value;
 }
 
 int LinuxParser::RunningProcesses() 
 { 
-  return 0; 
+  const std::string RUN_PROC_KEY{"procs_running"};
+  constexpr char delim = ' ';
+  std::ifstream statFile(kProcDirectory + kStatFilename);
+  int value{0};
+  if (statFile.is_open())
+  {
+    if (seekKey(statFile, RUN_PROC_KEY, delim)) {
+      statFile >> value;
+    }
+    statFile.close();
+  }
+  return value;
 }
 
 string LinuxParser::Command(int pid) 

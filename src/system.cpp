@@ -31,7 +31,7 @@ float System::MemoryUtilization() { return LinuxParser::MemoryUtilization(); }
 
 std::string System::OperatingSystem() { return operatingSystem_; }
 
-int System::RunningProcesses() { return LinuxParser::TotalProcesses(); }
+int System::RunningProcesses() { return LinuxParser::RunningProcesses(); }
 
 int System::TotalProcesses() { return LinuxParser::TotalProcesses(); }
 
