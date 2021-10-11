@@ -16,7 +16,8 @@ using std::size_t;
 using std::string;
 using std::vector;
 
-System::System() {
+System::System() 
+{
     kernel_ = LinuxParser::Kernel();
     operatingSystem_ = LinuxParser::OperatingSystem();
 }

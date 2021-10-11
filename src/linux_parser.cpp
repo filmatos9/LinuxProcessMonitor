@@ -121,7 +121,22 @@ long LinuxParser::IdleJiffies()
 
 vector<string> LinuxParser::CpuUtilization() 
 { 
-  return {}; 
+  const std::string CPU_KEY{"cpu"};
+  constexpr char delim = ' ';
+  std::ifstream statFile(kProcDirectory + kStatFilename);
+  vector<string> cpuUtilValues;
+  cpuUtilValues.reserve(10);
+  if (statFile.is_open()) 
+  {
+    if (FileParser::seekKey(statFile, CPU_KEY, delim))
+    {
+      string val;
+      while((statFile.peek()!='\n') && statFile >> val)
+        cpuUtilValues.push_back(val);
+    }
+    statFile.close();
+  }
+  return cpuUtilValues;
 }
 
 int LinuxParser::TotalProcesses() 
