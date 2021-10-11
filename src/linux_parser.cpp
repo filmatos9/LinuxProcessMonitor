@@ -99,44 +99,9 @@ long LinuxParser::UpTime()
   return uptimeSecs;
 }
 
-long LinuxParser::Jiffies() 
-{ 
-  return 0; 
-}
-
 long LinuxParser::ActiveJiffies(int pid)
 { 
   return 0; 
-}
-
-long LinuxParser::ActiveJiffies() 
-{ 
-  return 0; 
-}
-
-long LinuxParser::IdleJiffies() 
-{ 
-  return 0; 
-}
-
-vector<string> LinuxParser::CpuUtilization() 
-{ 
-  const std::string CPU_KEY{"cpu"};
-  constexpr char delim = ' ';
-  std::ifstream statFile(kProcDirectory + kStatFilename);
-  vector<string> cpuUtilValues;
-  cpuUtilValues.reserve(10);
-  if (statFile.is_open()) 
-  {
-    if (FileParser::seekKey(statFile, CPU_KEY, delim))
-    {
-      string val;
-      while((statFile.peek()!='\n') && statFile >> val)
-        cpuUtilValues.push_back(val);
-    }
-    statFile.close();
-  }
-  return cpuUtilValues;
 }
 
 int LinuxParser::TotalProcesses() 
@@ -194,4 +159,67 @@ string LinuxParser::User(int pid)
 long LinuxParser::UpTime(int pid) 
 { 
   return 0; 
+}
+
+// CPU UTILIZATION
+
+LinuxParser::CPU_Utilization::CPU_Utilization() : 
+    user        {0l},
+    nice        {0l},
+    system      {0l},
+    idle        {0l},
+    iowait      {0l},
+    irq         {0l},
+    softirq     {0l},
+    steal       {0l},
+    guest       {0l},
+    guest_nice  {0l}
+{}
+
+LinuxParser::CPU_Utilization::CPU_Utilization(const vector<string>& strVec) 
+    : LinuxParser::CPU_Utilization()
+{    
+    if (strVec.size() > 9)
+    {
+        user        = stol(strVec[LinuxParser::kUser_]);
+        nice        = stol(strVec[LinuxParser::kNice_]);
+        system      = stol(strVec[LinuxParser::kSystem_]);
+        idle        = stol(strVec[LinuxParser::kIdle_]);
+        iowait      = stol(strVec[LinuxParser::kIOwait_]);
+        irq         = stol(strVec[LinuxParser::kIRQ_]);
+        softirq     = stol(strVec[LinuxParser::kSoftIRQ_]);
+        steal       = stol(strVec[LinuxParser::kSteal_]);
+        guest       = stol(strVec[LinuxParser::kGuest_]);
+        guest_nice  = stol(strVec[LinuxParser::kGuestNice_]);
+    }
+}
+
+long LinuxParser::CPU_Utilization::getIdle() 
+{
+    return idle + iowait;
+}
+
+long LinuxParser::CPU_Utilization::getNonIdle() 
+{
+    return user + nice + system + irq + softirq + steal;
+}
+
+LinuxParser::CPU_Utilization LinuxParser::CpuUtilization() 
+{ 
+  const std::string CPU_KEY{"cpu"};
+  constexpr char delim = ' ';
+  std::ifstream statFile(kProcDirectory + kStatFilename);
+  vector<string> cpuUtilVals;
+  cpuUtilVals.reserve(10);
+  if (statFile.is_open()) 
+  {
+    if (FileParser::seekKey(statFile, CPU_KEY, delim))
+    {
+      string val;
+      while((statFile.peek()!='\n') && statFile >> val)
+        cpuUtilVals.push_back(val);
+    }
+    statFile.close();
+  }
+  return LinuxParser::CPU_Utilization(cpuUtilVals);
 }
