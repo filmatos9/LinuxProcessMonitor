@@ -1,4 +1,5 @@
 #include "linux_parser.h"
+#include "file_parser.h"
 
 #include <dirent.h>
 #include <unistd.h>
@@ -13,58 +14,6 @@ using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
-
-// PRIVATE FUNCTIONS FOR THIS TRANSLATION UNIT
-
-// remove leading whitespace
-int removeLeadWS(std::string& str) {
-  auto iter = std::find_if(str.begin(), str.end(), [] (char c) { return !isspace(c); });
-  int charsRemoved = std::distance(str.begin(), iter);
-  str.erase(str.begin(), iter);
-  return charsRemoved;
-}
-
-// remove trailing whitespace
-int removeTrailWS(std::string& str) 
-{
-  auto iter = std::find_if(str.rbegin(), str.rend(), [] (char c) { return !isspace(c); });
-  int charsRemoved = std::distance(str.rbegin(), iter);
-  str.erase(iter.base(), str.end());
-  return charsRemoved;
-}
-
-// this function will place the cursor immediately after the specified key's delimeter
-// for easy reading of the key value using the insertion operator
-// if the key is found, return true, else return false
-bool seekKey(std::ifstream& ifs, const std::string& key, char delim) {
-  std::string line, keyline;
-  // get current cursor position
-  auto cursorPos = ifs.tellg();
-  while(getline(ifs, line))
-  {
-    // remove leading whitespace from line update cursor pos
-    cursorPos += std::streamoff(removeLeadWS(line));
-    // parse line for specified delimeter
-    std::istringstream linestream(line);
-    auto keyLineStartPos = linestream.tellg();
-    getline(linestream, keyline, delim);
-    auto keyLineEndPos = linestream.tellg();
-    cursorPos += (keyLineEndPos - keyLineStartPos);
-    // check if the delimeter was found
-    if (linestream.good()) {
-      removeTrailWS(keyline);
-      if (keyline == key) {
-        ifs.seekg(cursorPos);
-        return true;
-      }
-    }
-    // update the cursor position
-    cursorPos = ifs.tellg();
-  }
-  // clear any errors which were generated
-  ifs.clear();
-  return false;
-}
 
 string LinuxParser::OperatingSystem() {
   string line;
@@ -127,10 +76,10 @@ float LinuxParser::MemoryUtilization()
     int memTotal{0};
     int memFree{0};
     // Get MemTotal
-    if (seekKey(memFile, MEM_TOTAL_KEY, delim)) {
+    if (FileParser::seekKey(memFile, MEM_TOTAL_KEY, delim)) {
       memFile >> memTotal;
     }
-    if (seekKey(memFile, MEM_AVAIL_KEY, delim)) {
+    if (FileParser::seekKey(memFile, MEM_AVAIL_KEY, delim)) {
       memFile >> memFree;
     }
     memFile.close();
@@ -183,7 +132,7 @@ int LinuxParser::TotalProcesses()
   int value{0};
   if (statFile.is_open())
   {
-    if (seekKey(statFile, TOTAL_PROC_KEY, delim)) {
+    if (FileParser::seekKey(statFile, TOTAL_PROC_KEY, delim)) {
       statFile >> value;
     }
     statFile.close();
@@ -199,7 +148,7 @@ int LinuxParser::RunningProcesses()
   int value{0};
   if (statFile.is_open())
   {
-    if (seekKey(statFile, RUN_PROC_KEY, delim)) {
+    if (FileParser::seekKey(statFile, RUN_PROC_KEY, delim)) {
       statFile >> value;
     }
     statFile.close();

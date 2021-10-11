@@ -7,17 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(Curses REQUIRED)
 
+add_subdirectory(file_parser)
+
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(monitor ${SOURCES})
 
-target_include_directories(monitor PUBLIC 
+target_include_directories(monitor PRIVATE 
     "${CURSES_INCLUDE_DIRS}"
     "${PROJECT_SOURCE_DIR}/include"
 )
 
 target_link_libraries(monitor 
     "${CURSES_LIBRARIES}"
+    "FileParser"
     "stdc++fs"
 )
 # TODO: Run -Werror in CI.
