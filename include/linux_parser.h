@@ -5,7 +5,8 @@
 #include <regex>
 #include <string>
 
-namespace LinuxParser {
+namespace LinuxParser
+{
 // Paths
 const std::string kProcDirectory{"/proc/"};
 const std::string kCmdlineFilename{"/cmdline"};
@@ -28,40 +29,42 @@ std::string OperatingSystem();
 std::string Kernel();
 
 // CPU
-enum CPUStates {
-  kUser_ = 0,
-  kNice_,
-  kSystem_,
-  kIdle_,
-  kIOwait_,
-  kIRQ_,
-  kSoftIRQ_,
-  kSteal_,
-  kGuest_,
-  kGuestNice_
+enum CPUStates
+{
+    kUser_ = 0,
+    kNice_,
+    kSystem_,
+    kIdle_,
+    kIOwait_,
+    kIRQ_,
+    kSoftIRQ_,
+    kSteal_,
+    kGuest_,
+    kGuestNice_
 };
 
-struct CPU_Utilization {
-	// CONSTRUCTORS
-	CPU_Utilization();
-	CPU_Utilization(const std::vector<std::string>&);
-	// FUNCTIONS
-	long getIdle();
-	long getNonIdle();
-	// VARIABLES
-	long user;
-	long nice;
-	long system;
-	long idle;
-	long iowait;
-	long irq;
-	long softirq;
-	long steal;
-	long guest;
-	long guest_nice;
+struct CPU_Utilization
+{
+    // CONSTRUCTORS
+    CPU_Utilization();
+    CPU_Utilization(const std::vector<std::string> &);
+    // FUNCTIONS
+    long getIdle();
+    long getNonIdle();
+    // VARIABLES
+    long user;
+    long nice;
+    long system;
+    long idle;
+    long iowait;
+    long irq;
+    long softirq;
+    long steal;
+    long guest;
+    long guest_nice;
 };
 
-CPU_Utilization CpuUtilization();
+CPU_Utilization CpuUtilization(int cpuNum = -1);
 long ActiveJiffies(int pid);
 
 // Processes
@@ -70,6 +73,6 @@ std::string Ram(int pid);
 std::string Uid(int pid);
 std::string User(int pid);
 long int UpTime(int pid);
-};  // namespace LinuxParser
+}; // namespace LinuxParser
 
 #endif

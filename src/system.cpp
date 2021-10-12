@@ -7,33 +7,62 @@
 #include <string>
 #include <vector>
 
+#include "linux_parser.h"
 #include "process.h"
 #include "processor.h"
-#include "linux_parser.h"
 
 using std::set;
 using std::size_t;
 using std::string;
 using std::vector;
 
-System::System() 
+System::System()
 {
-    kernel_ = LinuxParser::Kernel();
-    operatingSystem_ = LinuxParser::OperatingSystem();
+    m_kernel = LinuxParser::Kernel();
+    m_operatingSystem = LinuxParser::OperatingSystem();
 }
 
-Processor& System::Cpu() { return cpu_; }
+Processor &System::Cpu()
+{
+    return m_cpu;
+}
 
-vector<Process>& System::Processes() { return processes_; }
+vector<Process> &System::Processes()
+{
+    vector<int> pids(LinuxParser::Pids());
+    m_processes.clear();
+    m_processes.reserve(pids.size());
+    std::transform(pids.begin(), pids.end(), std::back_inserter(m_processes), [](int x) { return Process(x); });
 
-std::string System::Kernel() { return kernel_; }
+    return m_processes;
+}
 
-float System::MemoryUtilization() { return LinuxParser::MemoryUtilization(); }
+std::string System::Kernel() const
+{
+    return m_kernel;
+}
 
-std::string System::OperatingSystem() { return operatingSystem_; }
+float System::MemoryUtilization() const
+{
+    return LinuxParser::MemoryUtilization();
+}
 
-int System::RunningProcesses() { return LinuxParser::RunningProcesses(); }
+std::string System::OperatingSystem() const
+{
+    return m_operatingSystem;
+}
 
-int System::TotalProcesses() { return LinuxParser::TotalProcesses(); }
+int System::RunningProcesses() const
+{
+    return LinuxParser::RunningProcesses();
+}
 
-long int System::UpTime() { return LinuxParser::UpTime(); }
+int System::TotalProcesses() const
+{
+    return LinuxParser::TotalProcesses();
+}
+
+long int System::UpTime() const
+{
+    return LinuxParser::UpTime();
+}

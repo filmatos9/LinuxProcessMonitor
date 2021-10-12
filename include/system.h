@@ -7,24 +7,24 @@
 #include "process.h"
 #include "processor.h"
 
-class System 
+class System
 {
-public:
-	System();
-	Processor& Cpu();
-	std::vector<Process>& Processes();
-	float MemoryUtilization();
-	long UpTime();
-	int TotalProcesses();
-	int RunningProcesses();
-	std::string Kernel(); 
-	std::string OperatingSystem();
+  public:
+    System();
+    Processor &Cpu();
+    std::vector<Process> &Processes();
+    float MemoryUtilization() const;
+    long UpTime() const;
+    int TotalProcesses() const;
+    int RunningProcesses() const;
+    std::string Kernel() const;
+    std::string OperatingSystem() const;
 
-private:
-	Processor cpu_ = {};
-	std::vector<Process> processes_ = {};
-	std::string kernel_;
-	std::string operatingSystem_;
+  private:
+    Processor m_cpu;
+    std::vector<Process> m_processes;
+    std::string m_kernel;
+    std::string m_operatingSystem;
 };
 
 #endif

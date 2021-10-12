@@ -1,16 +1,16 @@
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
-class Processor 
+class Processor
 {
-public:
+  public:
     Processor();
     float Utilization();
 
-private:
+  private:
     long m_idleJiffies;
     long m_activeJiffies;
 };

@@ -1,4 +1,5 @@
 #include "processor.h"
+
 #include "linux_parser.h"
 
 Processor::Processor()
@@ -8,8 +9,8 @@ Processor::Processor()
     m_activeJiffies = util.getNonIdle();
 }
 
-float Processor::Utilization() 
-{ 
+float Processor::Utilization()
+{
     float CPU_Percentage{0.0f};
     LinuxParser::CPU_Utilization cpuUtil(LinuxParser::CpuUtilization());
     // get idle and non-idle params
@@ -23,9 +24,9 @@ float Processor::Utilization()
     long idled = idleJiffies - m_idleJiffies;
     // calculate percentage
     if (totald != 0)
-        CPU_Percentage = (totald - idled)/static_cast<float>(totald);
+        CPU_Percentage = (totald - idled) / static_cast<float>(totald);
     // store new cpu utilization vals
     m_idleJiffies = idleJiffies;
     m_activeJiffies = activeJiffies;
-    return CPU_Percentage; 
+    return CPU_Percentage;
 }
