@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <cstddef>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -27,14 +28,34 @@ Processor &System::Cpu()
     return m_cpu;
 }
 
+template<typename K, typename V>
+std::vector<std::pair<K, V>> mapToVector(const std::unordered_map<K, V> &map)
+{
+    std::vector<V> v;
+    v.resize(map.size());
+ 
+    std::copy(map.begin(), map.end(), v.begin());
+ 
+    return v;
+}
+
 vector<Process> &System::Processes()
 {
     vector<int> pids(LinuxParser::Pids());
-    m_processes.clear();
-    m_processes.reserve(pids.size());
-    std::transform(pids.begin(), pids.end(), std::back_inserter(m_processes), [](int x) { return Process(x); });
 
-    return m_processes;
+    // insert new pids
+    for (auto pid : pids) 
+    {
+        if (m_processes.find(pid) == m_processes.end()){
+            m_processes.insert( { pid, Process(pid) } );
+        }
+    }
+    // create result vector
+    vector<Process> result;
+    result.reserve(m_processes.size());
+    result = mapToVector(m_processes);
+    std::sort(result.begin(), result.end());
+    return result;
 }
 
 std::string System::Kernel() const

@@ -160,6 +160,7 @@ string LinuxParser::Ram(int pid)
         if (FileParser::seekKey(statusFile, "VmSize", ':'))
         {
             statusFile >> memUsage;
+            memUsage = to_string(stol(memUsage)/1024);
         }
         statusFile.close();
     }
@@ -221,25 +222,34 @@ long LinuxParser::UpTime(int pid)
 {
     constexpr int upTimeIndex = 22;
     std::ifstream upTimeFile(kProcDirectory + to_string(pid) + kStatFilename);
-    long uptimeSecs = 0;
+    long upTimeSecs = 0;
     if (upTimeFile.is_open())
     {
-        std::string upTimeStr;
-        int val = 0;
-        while(val++ < upTimeIndex && upTimeFile >> upTimeStr);
-        uptimeSecs = stol(upTimeStr);
-        uptimeSecs /= sysconf(_SC_CLK_TCK);
+        FileParser::seekVal(upTimeFile, upTimeIndex-1);
+        upTimeFile >> upTimeSecs;
+        upTimeSecs /= sysconf(_SC_CLK_TCK);
         upTimeFile.close();
     }
-    return uptimeSecs;
+    return upTimeSecs;
 }
-
-// CPU UTILIZATION
 
 long LinuxParser::ActiveJiffies(int pid)
 {
-    return 0;
+    constexpr int UTIME_IDX = 14;
+    std::ifstream statFile(kProcDirectory + to_string(pid) + kStatFilename);
+    long aJiffs = 0;
+    if (statFile.is_open())
+    {
+        long utime, stime, cutime, cstime = 0;
+        FileParser::seekVal(statFile, UTIME_IDX-1);
+        statFile >> utime >> stime >> cutime >> cstime;
+        aJiffs = utime + stime + cutime + cstime;
+
+    }
+    return aJiffs;
 }
+
+// CPU UTILIZATION
 
 LinuxParser::CPU_Utilization::CPU_Utilization()
     : user{0l}, nice{0l}, system{0l}, idle{0l}, iowait{0l}, irq{0l}, softirq{0l}, steal{0l}, guest{0l}, guest_nice{0l}

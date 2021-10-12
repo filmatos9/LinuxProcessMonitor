@@ -49,3 +49,14 @@ bool FileParser::seekKey(std::istream& is, const std::string& key, char delim)
   is.clear();
   return false;
 }
+
+bool FileParser::seekVal(std::istream& is, int idx) 
+{
+  std::string val;
+  int i = 0;
+  bool status;
+  while(i++ < idx && is >> val);
+  status = is.good();
+  is.clear();
+  return status;
+}

@@ -20,6 +20,9 @@ class Process
 
   private:
     int m_pid;
+    long m_activeJiffies;
+    long int m_upTime;
+    float m_cpuUtilization;
 };
 
 #endif
