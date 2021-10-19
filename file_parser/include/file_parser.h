@@ -35,7 +35,7 @@ namespace FileParser {
     bool seekKey(std::istream& is, const std::string& key, char delim);
 
     /**
-     * Places the Input Position Indicator (seekg, tellg) immediatly before the idx-th
+     * Places the Input Position Indicator (seekg, tellg) immediatly before the nth (idx)
      * value on a line. An input idx of zero does nothing... The cursor is already positioned
      * to extract the 0th value
      *

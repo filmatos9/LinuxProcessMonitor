@@ -253,8 +253,6 @@ long LinuxParser::ActiveJiffies(int pid)
     return aJiffs;
 }
 
-// CPU UTILIZATION
-
 LinuxParser::CPU_Utilization::CPU_Utilization()
     : user{0l}, nice{0l}, system{0l}, idle{0l}, iowait{0l}, irq{0l}, softirq{0l}, steal{0l}, guest{0l}, guest_nice{0l}
 {
