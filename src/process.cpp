@@ -14,56 +14,76 @@ using std::string;
 using std::to_string;
 using std::vector;
 
-Process::Process(int pid) : m_pid{pid} {
-    m_activeJiffies = LinuxParser::ActiveJiffies(pid);
-    m_upTime = LinuxParser::UpTime(pid);
+Process::Process(int pid) : m_pid{pid}
+{
+    m_command = LinuxParser::Command(pid);
+    m_user = LinuxParser::User(m_pid);
+    m_activeTimeSecs = static_cast<float>(LinuxParser::ActiveJiffies(m_pid)) / sysconf(_SC_CLK_TCK);
+    m_upTimeSecs = LinuxParser::UpTime(pid);
+    // use average cpu utilization to start
+    if (m_upTimeSecs > 0)
+        m_cpuUtilization = m_activeTimeSecs / m_upTimeSecs;
+    else
+        m_cpuUtilization = 0.0f;
 }
 
-int Process::Pid()
+int Process::Pid() const
 {
     return m_pid;
 }
 
-float Process::CpuUtilization()
+float Process::CpuUtilization() const
 {
-	float cpuUtil = 0.0f;
-    // get idle and non-idle params
-    long activeJiffies = LinuxParser::ActiveJiffies(m_pid);
-    long upTime = LinuxParser::UpTime(m_pid);
-    // calcuate difference
-    long totald = upTime - m_upTime;
-    long actived = activeJiffies - m_activeJiffies;
-    // calculate percentage
-    if (totald != 0)
-        cpuUtil = (actived) / static_cast<float>(totald);
-    // store new cpu utilization vals
-    m_activeJiffies = activeJiffies;
-    m_upTime = upTime;
-	m_cpuUtilization = cpuUtil;
-    return cpuUtil;
+    return m_cpuUtilization;
 }
 
-string Process::Command()
+string Process::Command() const
 {
-    return LinuxParser::Command(m_pid);
+    return m_command;
 }
 
-string Process::Ram()
+string Process::Ram() const
 {
-    return LinuxParser::Ram(m_pid);
+    return m_ram;
 }
 
-string Process::User()
+string Process::User() const
 {
-    return LinuxParser::User(m_pid);
+    return m_user;
 }
 
-long int Process::UpTime()
+long Process::UpTime() const
 {
-    return m_upTime;
+    return m_upTimeSecs;
 }
 
 bool Process::operator<(Process const &a) const
 {
-    return m_activeJiffies < a.m_activeJiffies;
+    return m_cpuUtilization > a.m_cpuUtilization;
+}
+
+void Process::update(){
+    updateCpuUtilization();
+    updateRam();
+}
+
+void Process::updateCpuUtilization() {
+    // get idle and non-idle params
+    float activeTimeSecs = static_cast<float>(LinuxParser::ActiveJiffies(m_pid)) / sysconf(_SC_CLK_TCK);
+    long upTimeSecs = LinuxParser::UpTime(m_pid);
+    // calcuate difference
+    long totald = upTimeSecs - m_upTimeSecs;
+    float actived = activeTimeSecs - m_activeTimeSecs;
+    // calculate percentage
+    if (totald > 0)
+    {
+        m_cpuUtilization = actived / totald;
+        m_activeTimeSecs = activeTimeSecs;
+        m_upTimeSecs = upTimeSecs;
+    }
+}
+
+void Process::updateRam()
+{
+    m_ram = LinuxParser::Ram(m_pid);
 }

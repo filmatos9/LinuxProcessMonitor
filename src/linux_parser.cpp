@@ -68,6 +68,7 @@ vector<int> LinuxParser::Pids()
             if (std::all_of(filename.begin(), filename.end(), isdigit))
             {
                 int pid = stoi(filename);
+                
                 pids.push_back(pid);
             }
         }
@@ -153,18 +154,19 @@ string LinuxParser::Command(int pid)
 
 string LinuxParser::Ram(int pid)
 {
-    string memUsage;
+    string memUsageStr;
     std::ifstream statusFile(kProcDirectory + to_string(pid) + kStatusFilename);
     if (statusFile.is_open())
     {
         if (FileParser::seekKey(statusFile, "VmSize", ':'))
         {
+            long memUsage;
             statusFile >> memUsage;
-            memUsage = to_string(stol(memUsage)/1024);
+            memUsageStr = to_string(memUsage / 1024);
         }
         statusFile.close();
     }
-    return memUsage;
+    return memUsageStr;
 }
 
 string LinuxParser::Uid(int pid)
@@ -186,7 +188,8 @@ string LinuxParser::User(int pid)
 {
     std::string user;
     std::string uid = Uid(pid);
-    if (!uid.empty()) {
+    if (!uid.empty())
+    {
         std::ifstream pwdFile(kPasswordPath);
         if (pwdFile.is_open())
         {
@@ -220,15 +223,17 @@ long LinuxParser::UpTime()
 
 long LinuxParser::UpTime(int pid)
 {
-    constexpr int upTimeIndex = 22;
-    std::ifstream upTimeFile(kProcDirectory + to_string(pid) + kStatFilename);
+    constexpr int startTimeIndex = 22;
+    std::ifstream startTimeFile(kProcDirectory + to_string(pid) + kStatFilename);
     long upTimeSecs = 0;
-    if (upTimeFile.is_open())
+    if (startTimeFile.is_open())
     {
-        FileParser::seekVal(upTimeFile, upTimeIndex-1);
-        upTimeFile >> upTimeSecs;
-        upTimeSecs /= sysconf(_SC_CLK_TCK);
-        upTimeFile.close();
+        long startTimeSecs = 0;
+        FileParser::seekVal(startTimeFile, startTimeIndex - 1);
+        startTimeFile >> startTimeSecs;
+        startTimeSecs /= sysconf(_SC_CLK_TCK);
+        upTimeSecs = UpTime() - startTimeSecs;
+        startTimeFile.close();
     }
     return upTimeSecs;
 }
@@ -241,10 +246,9 @@ long LinuxParser::ActiveJiffies(int pid)
     if (statFile.is_open())
     {
         long utime, stime, cutime, cstime = 0;
-        FileParser::seekVal(statFile, UTIME_IDX-1);
+        FileParser::seekVal(statFile, UTIME_IDX - 1);
         statFile >> utime >> stime >> cutime >> cstime;
         aJiffs = utime + stime + cutime + cstime;
-
     }
     return aJiffs;
 }

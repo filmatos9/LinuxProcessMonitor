@@ -28,34 +28,55 @@ Processor &System::Cpu()
     return m_cpu;
 }
 
-template<typename K, typename V>
-std::vector<std::pair<K, V>> mapToVector(const std::unordered_map<K, V> &map)
-{
-    std::vector<V> v;
-    v.resize(map.size());
- 
-    std::copy(map.begin(), map.end(), v.begin());
- 
-    return v;
-}
-
 vector<Process> &System::Processes()
 {
-    vector<int> pids(LinuxParser::Pids());
+    // get all active pids
+    vector<int> activePids(LinuxParser::Pids());
+
+    // get all existing pids
+    vector<int> existingPids;
+    existingPids.reserve(m_processes.size());
+    for (const auto &process : m_processes)
+        existingPids.push_back(process.Pid());
+
+    // sort the active and existing pids for set operations
+    std::sort(activePids.begin(), activePids.end());
+    std::sort(existingPids.begin(), existingPids.end());
+
+    // check which pids need to be removed (no longer active)
+    vector<int> pidsToRemove;
+    std::set_difference(existingPids.begin(), existingPids.end(), activePids.begin(), activePids.end(), std::back_inserter(pidsToRemove));
+
+    // check which pids need to be added (newly active)
+    vector<int> pidsToAdd;
+    std::set_difference(activePids.begin(), activePids.end(), existingPids.begin(), existingPids.end(), std::back_inserter(pidsToAdd));
+    m_processes.reserve(pidsToAdd.size() + m_processes.size());
+
+    // remove old pids
+    for (auto pid : pidsToRemove) {
+        m_processes.erase(
+            std::remove_if(m_processes.begin(), m_processes.end(), [pid](Process& x) { return x.Pid() == pid; }),
+            m_processes.end()
+            );
+    }
+
+    // update existing processes
+    for (auto &process : m_processes) {
+        process.update();
+    }
 
     // insert new pids
-    for (auto pid : pids) 
+    for (auto pid : pidsToAdd)
     {
-        if (m_processes.find(pid) == m_processes.end()){
-            m_processes.insert( { pid, Process(pid) } );
-        }
+        // if the new pids contain a launch command, we will include it, else, we will ignore
+        // why? because it seems these pids don't have useful info like RAM and such
+        // they are likely IRQs or subprocesses of other applications, idk?
+        if (!LinuxParser::Command(pid).empty())
+            m_processes.push_back(Process(pid));
     }
-    // create result vector
-    vector<Process> result;
-    result.reserve(m_processes.size());
-    result = mapToVector(m_processes);
-    std::sort(result.begin(), result.end());
-    return result;
+    // sort the array
+    std::sort(m_processes.begin(), m_processes.end());
+    return m_processes;
 }
 
 std::string System::Kernel() const
